@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
-	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -17,69 +16,69 @@ const (
 	password = "srzaadhil"
 	host     = "localhost"
 	port     = 5432
-	dbname   = "BlogApp"
+	dbname   = "blogapp"
 )
 
-var DB *sql.DB
+var db *sql.DB
 var err error
 
 func main() {
-	ConnectionString := fmt.Sprintf("user = %s password = %s host = %s port = %d dbname = %s sslmode = disable", user, password, host, port, dbname)
+	connectionString := fmt.Sprintf("user = %s password = %s host = %s port = %d dbname = %s sslmode = disable", user, password, host, port, dbname)
 
-	DB, err = sql.Open("postgres", ConnectionString)
-
+	db, err = sql.Open("postgres", connectionString)
+	// DSN parse error or initialisation error
 	if err != nil {
 		log.Fatal(err)
 	}
+	// close db connection before main function exit
+	defer db.Close()
 
-	defer DB.Close()
-
-	if err := DB.Ping(); err != nil {
+	if err := db.Ping(); err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Database Successfully Connected")
 
 	// User Creation *********************************************************************************
 	// Try with UNIQUE usernames..
-	userId, err := CreateUser("aadhil696@gmail.com", "password007")
+	err := createUser("aadhil696@gmail.com", "password007")
 	if err != nil {
 		log.Printf("user creation failed due to: %s", err)
 	} else {
-		fmt.Printf("User created with ID: %d", userId)
+		fmt.Printf("User created successfully")
 	}
 
 	// Create Author *********************************************************************************
-	// authorId, err := CreateAuthor("author1111")
+	// err = createAuthor("author1111")
 	// if err != nil {
 	// 	log.Printf("author creation failed due to: %s", err)
 	// } else {
-	// 	fmt.Printf("Author created with ID: %d", authorId)
+	// 	fmt.Printf("Author created successfully)
 	// }
 
 }
-func CreateUser(username, password string) (uint16, error) {
+func createUser(username, password string) error {
 	// Generate salt
-	salt, err := GenerateSalt(10)
+	salt, err := generateSalt(10)
 	if err != nil {
-		log.Printf("error generating salt: %v", err)
+		return fmt.Errorf("error generating salt: %v", err)
 	}
 
 	// Password Hashing
-	hashedPassword := HashPassword(password, salt)
+	hashedPassword := hashPassword(password, salt)
 
-	var userId uint16
-	query := `INSERT INTO users(username,password,salt,created_at,updated_at,is_deleted)
-			VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`
+	query := `INSERT INTO users(username,password,salt)
+			  VALUES ($1,$2,$3)`
 
-	if err := DB.QueryRow(query, username, hashedPassword, salt, time.Now(), time.Now(), false).Scan(&userId); err != nil {
-		return 0, err
+	_, err = db.Exec(query, username, hashedPassword, salt)
+	if err != nil {
+		return fmt.Errorf("execution error due to : %s", err)
 	}
 
-	return userId, nil
+	return nil
 }
 
 // Generate a random salt of the given length
-func GenerateSalt(length uint8) (string, error) {
+func generateSalt(length uint8) (string, error) {
 	bytes := make([]byte, length)
 	_, err := rand.Read(bytes)
 	if err != nil {
@@ -90,7 +89,7 @@ func GenerateSalt(length uint8) (string, error) {
 }
 
 // Hashes the password with given salt (SHA-256)
-func HashPassword(password, salt string) string {
+func hashPassword(password, salt string) string {
 	hash := sha256.New()
 	hash.Write([]byte(password + salt))
 	hashBytes := hash.Sum(nil)
@@ -98,15 +97,17 @@ func HashPassword(password, salt string) string {
 	return hashedPass
 }
 
-func CreateAuthor(name string) (uint16, error) {
-	var authorId uint16
+func createAuthor(name string) error {
 
-	query := `INSERT INTO authors(name,created_at,updated_at,status)
-			VALUES ($1,$2,$3,$4)
-			RETURNING id`
+	query := `INSERT INTO authors(name)
+			  VALUES ($1)`
 
-	if err := DB.QueryRow(query, name, time.Now(), time.Now(), true).Scan(&authorId); err != nil {
-		return 0, err
+	//if err := db.QueryRow(query, name).Scan(&authorId); err != nil {
+	//return 0, err
+	//}
+	_, err = db.Exec(query, name)
+	if err != nil {
+		return fmt.Errorf("execution error due to : %s ", err)
 	}
-	return authorId, nil
+	return nil
 }
