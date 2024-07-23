@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -40,20 +41,36 @@ func main() {
 
 	// User Creation *********************************************************************************
 	// Try with UNIQUE usernames..
-	err := createUser("aadhil696@gmail.com", "password007")
-	if err != nil {
-		log.Printf("user creation failed due to: %s", err)
-	} else {
-		fmt.Printf("User created successfully")
-	}
+	// err := createUser("aadhil696@gmail.com", "password007")
+	// if err != nil {
+	// 	log.Printf("user creation failed due to: %s", err)
+	// } else {
+	// 	fmt.Printf("User created successfully")
+	// }
 
 	// Create Author *********************************************************************************
 	// err = createAuthor("author1111")
 	// if err != nil {
-	// 	log.Printf("author creation failed due to: %s", err)
+	// 	fmt.Printf("author creation failed due to: %s", err)
 	// } else {
-	// 	fmt.Printf("Author created successfully)
+	// 	fmt.Printf("Author created successfully")
 	// }
+
+	// Create Blog ***********************************************************************************
+	err = createBlog("Blog1", 5, "My first blog", 1, 1)
+	if err != nil {
+		fmt.Printf("blog creation failed due to: %s", err)
+	} else {
+		fmt.Printf("blog creation successfull")
+	}
+
+	// Delete blog
+	err = deleteBlog(6, 1)
+	if err != nil {
+		fmt.Printf("blog deletion failed due to %s:", err)
+	} else {
+		fmt.Printf("blog deletion successfull")
+	}
 
 }
 func createUser(username, password string) error {
@@ -108,6 +125,29 @@ func createAuthor(name string) error {
 	_, err = db.Exec(query, name)
 	if err != nil {
 		return fmt.Errorf("execution error due to : %s ", err)
+	}
+	return nil
+}
+
+func createBlog(title string, authorId uint16, content string, status int, userId int) error {
+	query := `INSERT INTO blogs(title,author_id,content,status,created_by)
+			  VALUES($1,$2,$3,$4,$5)`
+
+	_, err = db.Exec(query, title, authorId, content, status, userId)
+	if err != nil {
+		return fmt.Errorf("query execution failed due to: %s", err)
+	}
+	return nil
+}
+
+func deleteBlog(id, userId uint16) error {
+	query := `UPDATE blogs
+			  SET deleted_by=$1,deleted_at=$2,status=$3
+			  WHERE id=$4`
+
+	_, err = db.Exec(query, userId, time.Now().UTC(), 3, id)
+	if err != nil {
+		return fmt.Errorf("delete query execution failed due to: %s", err)
 	}
 	return nil
 }
