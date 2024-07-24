@@ -41,7 +41,7 @@ func main() {
 
 	// User Creation *********************************************************************************
 	// Try with UNIQUE usernames..
-	// err := createUser("aadhil696@gmail.com", "password007")
+	// err := createUser("sukunan@gmail.com", "password123")
 	// if err != nil {
 	// 	log.Printf("user creation failed due to: %s", err)
 	// } else {
@@ -56,22 +56,48 @@ func main() {
 	// 	fmt.Printf("Author created successfully")
 	// }
 
-	// Create Blog ***********************************************************************************
-	err = createBlog("Blog1", 5, "My first blog", 1, 1)
-	if err != nil {
-		fmt.Printf("blog creation failed due to: %s", err)
-	} else {
-		fmt.Printf("blog creation successfull")
-	}
+	// //Create Blog ***********************************************************************************
+	// err = createBlog("Blog1", 3, "My first blog", 2, 3)
+	// if err != nil {
+	// 	fmt.Printf("blog creation failed due to: %s", err)
+	// } else {
+	// 	fmt.Printf("blog creation successfull")
+	// }
 
 	// Delete blog
-	err = deleteBlog(6, 1)
-	if err != nil {
-		fmt.Printf("blog deletion failed due to %s:", err)
-	} else {
-		fmt.Printf("blog deletion successfull")
-	}
+	// err = deleteBlog(6, 1)
+	// if err != nil {
+	// 	fmt.Printf("blog deletion failed due to %s:", err)
+	// } else {
+	// 	fmt.Printf("blog deletion successfull")
+	// }
 
+	//Read blog
+	// title, content, authorid, created_at, updated_at, err := readBlog(10)
+	// if err != nil {
+	// 	fmt.Printf("fetching blog failed due to: %s", err)
+	// } else {
+	// 	fmt.Printf("title: %s \n content: %s\n authorid: %d \n Created at: %s \n Updated at: %s \n", title, content, authorid, created_at, updated_at)
+	// }
+
+	//Update blog*********************************************************************************
+	// err = updateBlog(10, "updated title", "updated blog content")
+	// if err != nil {
+	// 	log.Printf("blog updation failed due to : %s", err)
+	// } else {
+	// 	fmt.Println("successfully updated")
+	// }
+
+	//Read All Blogs*****************************************************************************
+	blogs, err := readAllBlogs()
+	if err != nil {
+		log.Printf("getting blogs failed due to : %s", err)
+	} else {
+		for _, blog := range blogs {
+			fmt.Printf("BlogId : %d \n Title: %s \n Content: %s \n AuthorId: %d \n Created at: %s \n Updated at: %s \n", blog.id, blog.title, blog.content, blog.authorid, blog.created_at, blog.updated_at)
+
+		}
+	}
 }
 func createUser(username, password string) error {
 	// Generate salt
@@ -150,4 +176,75 @@ func deleteBlog(id, userId uint16) error {
 		return fmt.Errorf("delete query execution failed due to: %s", err)
 	}
 	return nil
+}
+
+func readBlog(id uint16) (string, string, uint16, time.Time, time.Time, error) {
+	var (
+		title      string
+		content    string
+		authorid   uint16
+		created_at time.Time
+		updated_at time.Time
+	)
+
+	query := `SELECT title,content,author_id,created_at,updated_at FROM blogs WHERE id = $1 AND status=2`
+
+	if err := db.QueryRow(query, id).Scan(&title, &content, &authorid, &created_at, &updated_at); err != nil {
+		return "", "", 0, time.Time{}, time.Time{}, err
+	}
+	return title, content, authorid, created_at, updated_at, nil
+}
+
+func updateBlog(id uint16, title string, content string) error {
+	query := `UPDATE blogs 
+			 SET title= $2,content= $3,updated_at= $4 
+			 WHERE id= $1 AND status IN (1,2)`
+
+	result, err := db.Exec(query, id, title, content, time.Now().UTC())
+	if err != nil {
+		return fmt.Errorf("query execution failed due to : %s", err)
+	}
+	isAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("no affected rows due to: %s", err)
+	}
+	if isAffected == 0 {
+		return fmt.Errorf("no entry with id %d or status in 1 or 2", id)
+	}
+	return nil
+}
+
+type blog struct {
+	id         uint16
+	title      string
+	authorid   uint16
+	content    string
+	created_at time.Time
+	updated_at time.Time
+}
+
+func readAllBlogs() ([]blog, error) {
+
+	query := `SELECT id,title,author_id,content,created_at,updated_at
+			  FROM blogs`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("query execution failed :%d", err)
+	}
+
+	defer rows.Close()
+
+	var blogs []blog
+	for rows.Next() {
+		var blog blog
+		if err := rows.Scan(&blog.id, &blog.title, &blog.authorid, &blog.content, &blog.created_at, &blog.updated_at); err != nil {
+			return nil, fmt.Errorf("row scan failed due to : %w", err)
+		}
+		blogs = append(blogs, blog)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("row iteration failed due to : %w", err)
+	}
+	return blogs, nil
 }
