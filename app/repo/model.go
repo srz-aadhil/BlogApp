@@ -11,5 +11,5 @@ type Model struct {
 
 type DeleteInfo struct {
 	DeletedAt time.Time
-	DeletedBy time.Time
+	DeletedBy uint16
 }

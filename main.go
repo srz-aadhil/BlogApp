@@ -1,6 +1,7 @@
 package main
 
 import (
+	"blog/app/repo"
 	"database/sql"
 	"fmt"
 	"log"
@@ -35,63 +36,103 @@ func main() {
 	}
 	fmt.Println("Database Successfully Connected")
 
-	// User Creation *********************************************************************************
-	// Try with UNIQUE usernames..
-	// err := createUser("sukunan@gmail.com", "password123")
-	// if err != nil {
-	// 	log.Printf("user creation failed due to: %s", err)
-	// } else {
-	// 	fmt.Printf("User created successfully")
-	// }
+	var user repo.User // creating an instance of user
+	var author repo.Author // creating an instance of author
+	var blog repo.Blog //creating an instance of blog
 
-	// Create Author *********************************************************************************
-	// err = createAuthor("author1111")
-	// if err != nil {
-	// 	fmt.Printf("author creation failed due to: %s", err)
-	// } else {
-	// 	fmt.Printf("Author created successfully")
-	// }
+	User creation
+	user.UserName = "django"
+	user.Password = "django123"
 
-	// //Create Blog ***********************************************************************************
-	// err = createBlog("Blog1", 3, "My first blog", 2, 3)
-	// if err != nil {
-	// 	fmt.Printf("blog creation failed due to: %s", err)
-	// } else {
-	// 	fmt.Printf("blog creation successfull")
-	// }
+	userID, err := user.Create(db)
+	if err != nil {
+		log.Printf("user creation failed due to : %s", err)
+	} else {
+		fmt.Printf("user created with ID : %d", userID)
+	}
 
-	// Delete blog
-	// err = deleteBlog(6, 1)
-	// if err != nil {
-	// 	fmt.Printf("blog deletion failed due to %s:", err)
-	// } else {
-	// 	fmt.Printf("blog deletion successfull")
-	// }
+	user.ID = 7								// User deletion
+	if err := user.Delete(db); err != nil {
+		log.Printf("user deletion failed due to :%s", err)
+	} else {
+		fmt.Printf("user deletion successfull")
+	}
 
-	//Read blog
-	// title, content, authorid, created_at, updated_at, err := readBlog(10)
-	// if err != nil {
-	// 	fmt.Printf("fetching blog failed due to: %s", err)
-	// } else {
-	// 	fmt.Printf("title: %s \n content: %s\n authorid: %d \n Created at: %s \n Updated at: %s \n", title, content, authorid, created_at, updated_at)
-	// }
+	user.UserName = "djangozz"
+	user.Password = "django007"
+	user.ID = 9
+	if err := user.Update(db); err != nil {
+		log.Printf("user updation failed due to $: %s", err)
+	} else {
+		fmt.Printf("user details updated successfully")
+	}
 
-	//Update blog*********************************************************************************
-	// err = updateBlog(10, "updated title", "updated blog content")
-	// if err != nil {
-	// 	log.Printf("blog updation failed due to : %s", err)
-	// } else {
-	// 	fmt.Println("successfully updated")
-	// }
+	userResult, err := user.GetOne(db) // Get single user details
+	if err != nil {
+		log.Printf("fetching user details failed due : %s", err)
+	} else {
+		// Type assertion to convert userResult to Users
+		u, ok := userResult.(repo.User)
+		if !ok {
+			log.Printf("type convertion failed ")
+		}
+		fmt.Printf("Username : %s \n UserID : %d", u.UserName, u.ID)
+	}
 
-	//Read All Blogs*****************************************************************************
-	// 	blogs, err := GetAll()
-	// 	if err != nil {
-	// 		log.Printf("getting blogs failed due to : %s", err)
-	// 	} else {
-	// 		for _, blog := range blogs {
-	// 			fmt.Printf("BlogId : %d \n Title: %s \n Content: %s \n AuthorId: %d \n Created at: %s \n Updated at: %s \n", blog.id, blog.title, blog.content, blog.authorid, blog.created_at, blog.updated_at)
+	Allusers, err := user.GetAll(db) // Get All users details
+	if err != nil {
+		log.Printf("all users fetching failed due to :%s", err)
+	} else {
+		for _, userslist := range Allusers {
+			//type assertion to convert userslist to Users type
+			au, ok := userslist.(repo.User)
+			if !ok {
+				log.Printf("type assertion failed")
+			} else {
+				fmt.Printf(" Username : %s UserID : %d CreatedAt : %v \n", au.UserName, au.ID, au.CreatedAt)
+			}
+		}
+	}
 
-	// 		}
-	// 	}
+	Author creation
+	author.Name = "author007"
+
+	authorID, err := author.Create(db)
+	if err != nil {
+		log.Printf("author creation failed due to : %s", err)
+	} else {
+		fmt.Printf("Author created with authorID : %d", authorID)
+	}
+
+	author.Name = "iauthor"
+	author.ID = 6
+	author.UpdatedBy = 7
+
+	if err = author.Update(db); err != nil {
+		log.Printf("Author updation failed due to : %s", err)
+	} else {
+		fmt.Printf("Author updation successfull")
+	}
+
+	author.ID = 5
+	author.DeletedBy = 7
+	if err = author.Delete(db); err != nil {
+		log.Printf("author deletion failed due to :%s", err)
+	} else {
+		fmt.Printf("author deletion successfull")
+	}
+
+	singleAuthor, err := author.GetOne(db)
+	if err != nil {
+		log.Printf("author fetching failed due to : %s", err)
+	} else {
+		//type assertion of singleAuthor to type
+		oneauthor, ok := singleAuthor.(repo.Author)
+		if !ok {
+			fmt.Printf("type assertion failed")
+		} else {
+			fmt.Printf(" AuthorName : %s AuthorID : %d ", oneauthor.Name, oneauthor.ID)
+		}
+	}
+
 }

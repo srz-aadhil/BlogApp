@@ -18,7 +18,7 @@ type User struct {
 	DeleteInfo
 }
 
-var _ Repo = (*Blog)(nil)
+var _ Repo = (*User)(nil)
 
 var user User
 
@@ -50,7 +50,7 @@ func (r *User) Update(db *sql.DB) (err error) {
 		`SET username=$1,password=$2,updated_at=$3
 			  			WHERE id=$4`
 
-	result, err := db.Exec(query, r.UserName, r.Password, time.Now().UTC(), r.ID)
+	result, err := db.Exec(query, r.UserName, salthash.HashPassword(r.Password, r.Salt), time.Now().UTC(), r.ID)
 	if err != nil {
 		return fmt.Errorf("query execution failed due to : %w", err)
 	}
@@ -65,6 +65,17 @@ func (r *User) Update(db *sql.DB) (err error) {
 	return nil
 }
 
+func (r *User) Delete(db *sql.DB) (err error) {
+	query := `UPDATE` + r.TableName() +
+		`SET is_deleted=$1,deleted_at=$2
+				WHERE id = $3`
+
+	_, err = db.Exec(query, true, time.Now().UTC(), r.ID)
+	if err != nil {
+		return fmt.Errorf("query execution failed due to: %w", err)
+	}
+	return nil
+}
 func (r *User) GetAll(db *sql.DB) (results []interface{}, err error) {
 	query := `SELECT id,username,password,created_at,updated_at
 			  FROM` + r.TableName() + `WHERE is_deleted=false`
