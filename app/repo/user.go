@@ -9,7 +9,7 @@ import (
 
 // User Model
 type User struct {
-	ID        uint16
+	ID        int
 	UserName  string
 	Password  string
 	Salt      string
@@ -18,39 +18,49 @@ type User struct {
 	DeleteInfo
 }
 
-var _ Repo = (*User)(nil)
+type UserRepoImpl struct {
+	db *sql.DB
+}
+
+var _ Repo = (*UserRepoImpl)(nil)
+
+func NewUserRepo(db *sql.DB) Repo {
+	return &UserRepoImpl{
+		db: db,
+	}
+}
 
 var user User
 
-func (r *User) TableName() string {
+func (r *UserRepoImpl) TableName() string {
 	return " users "
 }
-func (r *User) Create(db *sql.DB) (lastInsertID int64, err error) {
+func (r *UserRepoImpl) Create() (lastInsertID int64, err error) {
 	// Generate Salt
 	salt, err := salthash.GenerateSalt(10)
 	if err != nil {
 		return 0, fmt.Errorf("error generating salt: %w", err)
 	}
 	// Hash Password
-	PasswordString := salthash.HashPassword(r.Password, salt)
+	PasswordString := salthash.HashPassword(user.Password, salt)
 
 	query := `INSERT INTO` + r.TableName() + `(username,password,salt)
 						VALUES ($1,$2,$3)
 						RETURNING id`
 
-	if err := db.QueryRow(query, r.UserName, PasswordString, salt).Scan(&lastInsertID); err != nil {
+	if err := r.db.QueryRow(query, user.UserName, PasswordString, salt).Scan(&lastInsertID); err != nil {
 		return 0, fmt.Errorf("query execution failed due to : %w", err)
 	}
 
 	return lastInsertID, nil
 }
 
-func (r *User) Update(db *sql.DB) (err error) {
+func (r *UserRepoImpl) Update(id int) (err error) {
 	query := `UPDATE` + r.TableName() +
 		`SET username=$1,password=$2,updated_at=$3
 			  			WHERE id=$4`
 
-	result, err := db.Exec(query, r.UserName, salthash.HashPassword(r.Password, r.Salt), time.Now().UTC(), r.ID)
+	result, err := r.db.Exec(query, user.UserName, salthash.HashPassword(user.Password, user.Salt), time.Now().UTC(), id)
 	if err != nil {
 		return fmt.Errorf("query execution failed due to : %w", err)
 	}
@@ -60,27 +70,27 @@ func (r *User) Update(db *sql.DB) (err error) {
 		return fmt.Errorf("no affected rows due to : %w", err)
 	}
 	if isAffected == 0 {
-		return fmt.Errorf("no user with ID : %d", r.ID)
+		return fmt.Errorf("no user with ID : %d", id)
 	}
 	return nil
 }
 
-func (r *User) Delete(db *sql.DB) (err error) {
+func (r *UserRepoImpl) Delete(id int) (err error) {
 	query := `UPDATE` + r.TableName() +
 		`SET is_deleted=$1,deleted_at=$2
 				WHERE id = $3`
 
-	_, err = db.Exec(query, true, time.Now().UTC(), r.ID)
+	_, err = r.db.Exec(query, true, time.Now().UTC(), id)
 	if err != nil {
 		return fmt.Errorf("query execution failed due to: %w", err)
 	}
 	return nil
 }
-func (r *User) GetAll(db *sql.DB) (results []interface{}, err error) {
+func (r *UserRepoImpl) GetAll() (results []interface{}, err error) {
 	query := `SELECT id,username,password,created_at,updated_at
 			  FROM` + r.TableName() + `WHERE is_deleted=false`
 
-	rows, err := db.Query(query)
+	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("query execution failed due to : %w", err)
 	}
@@ -98,14 +108,14 @@ func (r *User) GetAll(db *sql.DB) (results []interface{}, err error) {
 	return results, nil
 }
 
-func (r *User) GetOne(db *sql.DB) (result interface{}, err error) {
+func (r *UserRepoImpl) GetOne(id int) (result interface{}, err error) {
 	query := `SELECT id,username,password,created_at,updated_at
 						FROM` + r.TableName() +
 		`WHERE id=$1
 						AND
 						is_deleted=false`
 	// var user User
-	if err := db.QueryRow(query, r.ID).Scan(&user.ID, &user.UserName, &user.Password, &user.CreatedAt, &user.UpdatedAt); err != nil {
+	if err := r.db.QueryRow(query, id).Scan(&user.ID, &user.UserName, &user.Password, &user.CreatedAt, &user.UpdatedAt); err != nil {
 		return nil, fmt.Errorf("query execution failed due to : %w", err)
 	}
 	return user, nil

@@ -5,11 +5,11 @@ import "time"
 type Model struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	CreatedBy uint16
-	UpdatedBy uint16
+	CreatedBy *int
+	UpdatedBy int
 }
 
 type DeleteInfo struct {
 	DeletedAt time.Time
-	DeletedBy uint16
+	DeletedBy int
 }
