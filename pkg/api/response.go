@@ -5,16 +5,21 @@ import (
 	"net/http"
 )
 
+const (
+	StatusOK   = "ok"
+	StatusFail = "not ok"
+)
+
 type Response struct {
-	Status string
-	Error  *ResponseError
-	Result json.RawMessage
+	Status string          `json:"status"`
+	Error  *ResponseError  `json:"error,omitempty"`
+	Result json.RawMessage `json:"result,omitempty"`
 }
 
 type ResponseError struct {
-	Code    int
-	Message string
-	Details []string
+	Code    int      `json:"code"`
+	Message string   `json:"message"`
+	Details []string `json:"details"`
 }
 
 func (e *ResponseError) Error() string {
@@ -25,9 +30,10 @@ func (e *ResponseError) Error() string {
 	return string(j)
 }
 
+// Fail sends an unsuccessful JSON with the standard failure format
 func Fail(w http.ResponseWriter, errCode int, msg string, details ...string) {
 	r := &Response{
-		Status: "StatusFail",
+		Status: StatusFail,
 		Error: &ResponseError{
 			Code:    errCode,
 			Message: msg,
@@ -47,7 +53,8 @@ func Fail(w http.ResponseWriter, errCode int, msg string, details ...string) {
 
 }
 
-func Send(w http.ResponseWriter, status int, result interface{}) {
+// Success sends a successful JSON response using the standard success format
+func Success(w http.ResponseWriter, status int, result interface{}) {
 	rj, err := json.Marshal(result)
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -55,7 +62,7 @@ func Send(w http.ResponseWriter, status int, result interface{}) {
 	}
 
 	r := &Response{
-		Status: "StatusOK",
+		Status: StatusOK,
 		Result: rj,
 	}
 
