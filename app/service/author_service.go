@@ -12,6 +12,9 @@ import (
 type AuthorService interface {
 	GetAuthor(r *http.Request) (*dto.AuthorResponse, error)
 	GetAuthors() (*[]dto.AuthorResponse, error)
+	DeleteAuthor(r *http.Request) error
+	CreateAuthor(r *http.Request) (int64, error)
+	UpdateAuthor(r *http.Request) error
 }
 
 var _ AuthorService = (*AuthorServiceImpl)(nil)
@@ -80,4 +83,8 @@ func (s *AuthorServiceImpl) GetAuthors() (*[]dto.AuthorResponse, error) {
 		authors = append(authors, author)
 	}
 	return &authors, nil
+}
+
+func (s *AuthorServiceImpl) DeleteAuthor(r *http.Request) error {
+	req
 }
