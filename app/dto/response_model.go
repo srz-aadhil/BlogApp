@@ -10,6 +10,6 @@ type CreatedUpdatedResponse struct {
 }
 
 type DeleteResponse struct {
-	DeletedBy int `json:"deleted_by"`
-	DeletedAt int `json:"deleted_at"`
+	DeletedBy int       `json:"deleted_by"`
+	DeletedAt time.Time `json:"deleted_at"`
 }
