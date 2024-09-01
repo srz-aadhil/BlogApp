@@ -30,7 +30,7 @@ func (c *AuthorControllerImpl) GetaAllAuthors(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	api.Send(w, http.StatusOK, allAuthors)
+	api.Success(w, http.StatusOK, allAuthors)
 }
 
 func (c *AuthorControllerImpl) GetOneAuthor(w http.ResponseWriter, r *http.Request) {
@@ -41,6 +41,6 @@ func (c *AuthorControllerImpl) GetOneAuthor(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	api.Send(w, http.StatusOK, authorResponse)
+	api.Success(w, http.StatusOK, authorResponse)
 
 }

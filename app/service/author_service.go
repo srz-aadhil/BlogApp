@@ -17,10 +17,10 @@ type AuthorService interface {
 var _ AuthorService = (*AuthorServiceImpl)(nil)
 
 type AuthorServiceImpl struct {
-	authorRepo repo.Repo
+	authorRepo repo.AuthorRepo
 }
 
-func NewAuthorService(authorRepo repo.Repo) AuthorService {
+func NewAuthorService(authorRepo repo.AuthorRepo) AuthorService {
 	return &AuthorServiceImpl{
 		authorRepo: authorRepo,
 	}
@@ -36,17 +36,11 @@ func (s *AuthorServiceImpl) GetAuthor(r *http.Request) (*dto.AuthorResponse, err
 		return nil, err
 	}
 
-	result, err := s.authorRepo.GetOne(req.ID)
+	a, err := s.authorRepo.GetOne(req.ID)
 	if err != nil {
 		return nil, err
 	}
-
-	a, ok := result.(repo.Author)
-	if !ok {
-		return nil, err
-	}
-
-	var author *dto.AuthorResponse
+	var author dto.AuthorResponse
 
 	author.ID = a.ID
 	author.Name = a.Name
@@ -57,7 +51,7 @@ func (s *AuthorServiceImpl) GetAuthor(r *http.Request) (*dto.AuthorResponse, err
 	author.DeletedBy = a.DeletedBy
 	author.DeletedAt = a.DeletedAt
 
-	return author, nil
+	return &author, nil
 
 }
 
@@ -66,23 +60,19 @@ func (s *AuthorServiceImpl) GetAuthors() (*[]dto.AuthorResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	var authors []dto.AuthorResponse
-	for _, val := range results {
-		a, ok := val.(repo.Author)
-		if !ok {
-			return nil, err
-		}
+	var authorslist []dto.AuthorResponse
+	for _, val := range *results {
 
 		var authorResp dto.AuthorResponse
-		authorResp.ID = a.ID
-		authorResp.Name = a.Name
-		authorResp.CreatedAt = a.CreatedAt
-		authorResp.CreatedBy = a.CreatedBy
+		authorResp.ID = val.ID
+		authorResp.Name = val.Name
+		authorResp.CreatedAt = val.CreatedAt
+		authorResp.CreatedBy = val.CreatedBy
 
-		authors = append(authors, authorResp)
+		authorslist = append(authorslist, authorResp)
 	}
-	return &authors, nil
+	return &authorslist, nil
+
 }
 
 func (s *AuthorServiceImpl) DeleteAuthor(r *http.Request) error {
@@ -96,6 +86,39 @@ func (s *AuthorServiceImpl) DeleteAuthor(r *http.Request) error {
 	}
 
 	if err := s.authorRepo.Delete(req.ID); err != nil {
+		return err
+	}
+	return nil
+}
+func (s *AuthorServiceImpl) CreateAuthor(r *http.Request) (int64, error) {
+	body := &dto.AuthorCreateRequest{}
+	if err := body.Parse(r); err != nil {
+		return 0, err
+	}
+
+	if err := body.Validate(); err != nil {
+		return 0, err
+	}
+
+	authorID, err := s.authorRepo.Create(body)
+	if err != nil {
+		return 0, err
+	}
+	return authorID, nil
+
+}
+
+func (s *AuthorServiceImpl) UpdateAuthor(r *http.Request) error {
+	body := &dto.AuthorUpdateRequest{}
+	if err := body.Parse(r); err != nil {
+		return err
+	}
+
+	if err := body.Validate(); err != nil {
+		return err
+	}
+
+	if err := s.authorRepo.Update(body); err != nil {
 		return err
 	}
 	return nil
