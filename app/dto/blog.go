@@ -10,9 +10,10 @@ import (
 )
 
 type BlogResponse struct {
-	ID      int
-	Title   string
-	Content string
+	ID       int
+	Title    string
+	Content  string
+	AuthorID int
 	CreatedUpdatedResponse
 	DeleteResponse
 }
