@@ -1,71 +1,78 @@
 package controller
 
 import (
-	"blog/app/dto"
-	"encoding/json"
+	"blog/app/service"
+	"blog/pkg/api"
 	"log"
 	"net/http"
 )
 
 type BlogController interface {
+	CreateBlog(w http.ResponseWriter, r *http.Request)
+	UpdateBlog(w http.ResponseWriter, r *http.Request)
+	DeleteBlog(w http.ResponseWriter, r *http.Request)
 	GetAllBlogs(w http.ResponseWriter, r *http.Request)
 	GetOneBlog(w http.ResponseWriter, r *http.Request)
 }
 
 var _ BlogController = (*blogControllerImpl)(nil)
 
-type blogControllerImpl struct{}
+type blogControllerImpl struct {
+	blogService service.BlogService
+}
 
-func NewBlogController() BlogController {
-	return &blogControllerImpl{}
+func NewBlogController(blogService service.BlogService) BlogController {
+	return &blogControllerImpl{
+		blogService: blogService,
+	}
+}
+
+func (c *blogControllerImpl) CreateBlog(w http.ResponseWriter, r *http.Request) {
+	blogID, err := c.blogService.CreateBlog(r)
+	if err != nil {
+		log.Fatal("blog creation failed due  to : ", err)
+		api.Fail(w, http.StatusInternalServerError, "failed", err.Error())
+		return
+	}
+	api.Success(w, http.StatusOK, blogID)
+}
+
+func (c *blogControllerImpl) UpdateBlog(w http.ResponseWriter, r *http.Request) {
+	if err := c.blogService.UpdateBlog(r); err != nil {
+		log.Fatal("blog updation failed due to :", err)
+		api.Fail(w, http.StatusInternalServerError, "failed", err.Error())
+		return
+	}
+	api.Success(w, http.StatusOK, "blog updation successfully completed")
+
+}
+
+func (c *blogControllerImpl) DeleteBlog(w http.ResponseWriter, r *http.Request) {
+	if err := c.blogService.DeleteBlog(r); err != nil {
+		log.Fatal("Blog deletion failed due to :", err)
+		api.Fail(w, http.StatusInternalServerError, "failed", err.Error())
+		return
+	}
+	api.Success(w, http.StatusOK, "Blog deletion successfully completed")
 }
 
 func (c *blogControllerImpl) GetAllBlogs(w http.ResponseWriter, r *http.Request) {
-
-	var blogs []dto.BlogResponse
-
-	blog1 := dto.BlogResponse{
-		ID:      2,
-		Title:   "Second blog",
-		Content: "Second content",
-	}
-	blog2 := dto.BlogResponse{
-		ID:      3,
-		Title:   "Third blog",
-		Content: "Third content",
-	}
-
-	blogs = append(blogs, blog1, blog2)
-
-	jsonData, err := json.Marshal(blogs)
+	result, err := c.blogService.GetBlogs()
 	if err != nil {
-		log.Printf("error due to : %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed"))
+		log.Fatal("fetching all blogs failed due to :", err)
+		api.Fail(w, http.StatusInternalServerError, "Failed", err.Error())
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(jsonData))
+	api.Success(w, http.StatusOK, result)
 
 }
 
 func (c *blogControllerImpl) GetOneBlog(w http.ResponseWriter, r *http.Request) {
-
-	blog := dto.BlogResponse{
-		ID:      1,
-		Title:   "my blog",
-		Content: "blog content",
-	}
-	jsonData, err := json.Marshal(blog)
+	result, err := c.blogService.GetBlog(r)
 	if err != nil {
-		log.Printf("error due to : %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed"))
+		log.Fatal("fetching single blog failed due to :", err)
+		api.Fail(w, http.StatusInternalServerError, "failed", err.Error())
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(jsonData))
-
+	api.Success(w, http.StatusOK, result)
 }
