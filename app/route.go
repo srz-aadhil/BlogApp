@@ -10,10 +10,15 @@ import (
 )
 
 func apiRouter(db *sql.DB) chi.Router {
-	blogController := controller.NewBlogController()
+	// Author
 	authorRepo := repo.NewAuthorRepo(db)
 	authorService := service.NewAuthorService(authorRepo)
 	authorController := controller.NewAuthorController(authorService)
+
+	// Blog
+	blogRepo := repo.NewBlogRepo(db)
+	blogService := service.NewBlogService(blogRepo)
+	blogController := controller.NewBlogController(blogService)
 
 	r := chi.NewRouter()
 	r.Route("/blogs", func(r chi.Router) {

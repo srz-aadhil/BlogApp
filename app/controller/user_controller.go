@@ -1,67 +1,80 @@
 package controller
 
-// import (
-// 	"blog/app/dto"
-// 	"encoding/json"
-// 	"log"
-// 	"net/http"
-// )
+import (
+	"blog/app/service"
+	"blog/pkg/api"
+	"log"
+	"net/http"
+)
 
-// type UserController interface {
-// 	GetAllUsers(w http.ResponseWriter, r *http.Request)
-// 	GetOneUser(w http.ResponseWriter, r *http.Request)
-// }
+type UserController interface {
+	CreateUser(w http.ResponseWriter, r *http.Request)
+	UpdateUser(w http.ResponseWriter, r *http.Request)
+	GetUser(w http.ResponseWriter, r *http.Request)
+	GetAllUsers(w http.ResponseWriter, r *http.Request)
+	DeleteUser(w http.ResponseWriter, r *http.Request)
+}
 
-// type UserControllerImpl struct{}
+type UserControllerImpl struct {
+	userService service.UserService
+}
 
-// func NewUserController() UserController {
-// 	return &UserControllerImpl{}
-// }
+func NewUserController(userService service.UserService) UserController {
+	return &UserControllerImpl{
+		userService: userService,
+	}
+}
 
-// func (c *UserControllerImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+func (c *UserControllerImpl) CreateUser(w http.ResponseWriter, r *http.Request) {
+	userID, err := c.userService.CreateUser(r)
+	if err != nil {
+		log.Fatal("User creation failed due to : ", err)
+		api.Fail(w, http.StatusInternalServerError, "Failed", err.Error())
+		return
+	}
 
-// 	var users []dto.UserResponse
+	api.Success(w, http.StatusOK, userID)
+}
 
-// 	user1 := dto.UserResponse{
-// 		ID:       1,
-// 		Username: "Adam",
-// 	}
+func (c *UserControllerImpl) UpdateUser(w http.ResponseWriter, r *http.Request) {
+	if err := c.userService.UpdateUser(r); err != nil {
+		log.Fatal("User updation failed due to : ", err)
+		api.Fail(w, http.StatusInternalServerError, "Failed", err.Error())
+		return
+	}
 
-// 	user2 := dto.UserResponse{
-// 		ID:       2,
-// 		Username: "Ahmad",
-// 	}
+	api.Success(w, http.StatusOK, "User updation successfull")
+}
 
-// 	users = append(users, user1, user2)
+func (c *UserControllerImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	allUsers, err := c.userService.GetAllUsers()
+	if err != nil {
+		log.Fatal("Fetching all users failed due to :", err)
+		api.Fail(w, http.StatusInternalServerError, "Failed", err.Error())
+		return
+	}
 
-// 	jsonData, err := json.Marshal(users)
-// 	if err != nil {
-// 		log.Printf("error due to : %s", err)
-// 		w.WriteHeader(http.StatusInternalServerError)
-// 		w.Write([]byte("Failed"))
-// 		return
-// 	}
+	api.Success(w, http.StatusOK, allUsers)
 
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusOK)
-// 	w.Write([]byte(jsonData))
-// }
-// func (c *UserControllerImpl) GetOneUser(w http.ResponseWriter, r *http.Request) {
+}
 
-// 	user3 := dto.UserResponse{
-// 		ID:       3,
-// 		Username: "Anandhu",
-// 	}
+func (c *UserControllerImpl) GetUser(w http.ResponseWriter, r *http.Request) {
+	user, err := c.userService.GetUser(r)
+	if err != nil {
+		log.Fatal("Fetching single user failed due to :", err)
+		api.Fail(w, http.StatusInternalServerError, "Failed", err.Error())
+		return
+	}
 
-// 	jsonData, err := json.Marshal(user3)
-// 	if err != nil {
-// 		log.Printf("error due to :%s", err)
-// 		w.WriteHeader(http.StatusInternalServerError)
-// 		w.Write([]byte("Failed"))
-// 		return
-// 	}
+	api.Success(w, http.StatusOK, user)
+}
 
-// 	w.Header().Set("Content_Type", "application/json")
-// 	w.WriteHeader(http.StatusOK)
-// 	w.Write([]byte(jsonData))
-// }
+func (c *UserControllerImpl) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	if err := c.userService.DeleteUser(r); err != nil {
+		log.Fatal("User deletion failed due to :", err)
+		api.Fail(w, http.StatusInternalServerError, "Failed", err.Error())
+		return
+	}
+
+	api.Success(w, http.StatusOK, "User deletion successfully completed")
+}

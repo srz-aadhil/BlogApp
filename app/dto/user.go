@@ -67,7 +67,7 @@ func (u *UserCreateRequest) Validate() error {
 
 type UserUpdateRequest struct {
 	ID       int    `validate:"required"`
-	Username string `json:"name"`
+	UserName string `json:"name"`
 	Password string `json:"password"`
 }
 

@@ -20,11 +20,11 @@ type BlogRespImpl struct {
 	blogRepo repo.BlogRepo
 }
 
-func NewBlogService(blogRepo repo.BlogRepo) BlogService {
-	return &BlogRespImpl{
-		blogRepo: blogRepo,
-	}
-}
+// func NewBlogService(blogRepo repo.BlogRepo) BlogService {
+// 	return &BlogRespImpl{
+// 		blogRepo: blogRepo,
+// 	}
+// }
 
 func (s *BlogRespImpl) CreateBlog(r *http.Request) (int64, error) {
 	body := &dto.BlogCreateRequest{}
