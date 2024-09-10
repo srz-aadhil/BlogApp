@@ -20,21 +20,35 @@ func apiRouter(db *sql.DB) chi.Router {
 	blogService := service.NewBlogService(blogRepo)
 	blogController := controller.NewBlogController(blogService)
 
+	// User
+	userRepo := repo.NewUserRepo(db)
+	userService := service.NewUserService(userRepo)
+	userController := controller.NewUserController(userService)
+
 	r := chi.NewRouter()
 	r.Route("/blogs", func(r chi.Router) {
+		r.Post("/create", blogController.CreateBlog)
 		r.Get("/", blogController.GetAllBlogs)
 		r.Get("/{id}", blogController.GetOneBlog)
+		r.Put("/{id}", blogController.UpdateBlog)
+		r.Delete("/{id}", blogController.DeleteBlog)
 	})
-	// userController := controller.NewUserController()
 
-	// r.Route("/users", func(r chi.Router) {
-	// 	r.Get("/", userController.GetAllUsers)
-	// 	r.Get("/{id}", userController.GetOneUser)
-	// })
+	r.Route("/users", func(r chi.Router) {
+		r.Post("/create", userController.CreateUser)
+		r.Get("/", userController.GetAllUsers)
+		r.Get("/{id}", userController.GetUser)
+		r.Put("/{id}", userController.UpdateUser)
+		r.Delete("/{id}", userController.DeleteUser)
+	})
 
 	r.Route("/authors", func(r chi.Router) {
+		r.Post("/create", authorController.CreateAuthor)
 		r.Get("/", authorController.GetaAllAuthors)
 		r.Get("/{id}", authorController.GetOneAuthor)
+		r.Put("/{id}", authorController.UpdateAuthor)
+		r.Delete("/{id}", authorController.DeleteAuthor)
+
 	})
 	return r
 }

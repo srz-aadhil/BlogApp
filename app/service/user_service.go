@@ -91,6 +91,8 @@ func (s *UserServiceImpl) GetAllUsers() (*[]dto.UserResponse, error) {
 		var user dto.UserResponse
 		user.ID = val.ID
 		user.UserName = val.UserName
+		user.Password = val.Password
+		user.Salt = val.Salt
 		user.CreatedBy = val.CreatedBy
 		user.CreatedAt = val.CreatedAt
 		user.UpdatedBy = val.UpdatedBy

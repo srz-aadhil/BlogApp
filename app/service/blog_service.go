@@ -14,19 +14,19 @@ type BlogService interface {
 	GetBlogs() (*[]dto.BlogResponse, error)
 }
 
-var _ BlogService = (*BlogRespImpl)(nil)
+var _ BlogService = (*BlogServiceImpl)(nil)
 
-type BlogRespImpl struct {
+type BlogServiceImpl struct {
 	blogRepo repo.BlogRepo
 }
 
-// func NewBlogService(blogRepo repo.BlogRepo) BlogService {
-// 	return &BlogRespImpl{
-// 		blogRepo: blogRepo,
-// 	}
-// }
+func NewBlogService(blogRepo repo.BlogRepo) BlogService {
+	return &BlogServiceImpl{
+		blogRepo: blogRepo,
+	}
+}
 
-func (s *BlogRespImpl) CreateBlog(r *http.Request) (int64, error) {
+func (s *BlogServiceImpl) CreateBlog(r *http.Request) (int64, error) {
 	body := &dto.BlogCreateRequest{}
 	if err := body.Parse(r); err != nil {
 		return 0, err
@@ -44,7 +44,7 @@ func (s *BlogRespImpl) CreateBlog(r *http.Request) (int64, error) {
 
 }
 
-func (s *BlogRespImpl) UpdateBlog(r *http.Request) error {
+func (s *BlogServiceImpl) UpdateBlog(r *http.Request) error {
 	body := &dto.BlogUpdateRequest{}
 	if err := body.Parse(r); err != nil {
 		return err
@@ -60,8 +60,8 @@ func (s *BlogRespImpl) UpdateBlog(r *http.Request) error {
 	return nil
 }
 
-func (s *BlogRespImpl) DeleteBlog(r *http.Request) error {
-	req := &dto.BlogRequest{}
+func (s *BlogServiceImpl) DeleteBlog(r *http.Request) error {
+	req := &dto.BlogDeleteRequest{}
 	if err := req.Parse(r); err != nil {
 		return err
 	}
@@ -70,13 +70,13 @@ func (s *BlogRespImpl) DeleteBlog(r *http.Request) error {
 		return err
 	}
 
-	if err := s.blogRepo.Delete(req.ID); err != nil {
+	if err := s.blogRepo.Delete(req); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *BlogRespImpl) GetBlog(r *http.Request) (*dto.BlogResponse, error) {
+func (s *BlogServiceImpl) GetBlog(r *http.Request) (*dto.BlogResponse, error) {
 	body := &dto.BlogRequest{}
 	if err := body.Parse(r); err != nil {
 		return nil, err
@@ -97,6 +97,7 @@ func (s *BlogRespImpl) GetBlog(r *http.Request) (*dto.BlogResponse, error) {
 	blogResp.Title = blog.Title
 	blogResp.Content = blog.Content
 	blogResp.AuthorID = blog.AuthorID
+	blogResp.Status = blog.Status
 	blogResp.CreatedBy = blog.CreatedBy
 	blogResp.CreatedAt = blog.CreatedAt
 	blogResp.UpdatedBy = blog.UpdatedBy
@@ -107,7 +108,7 @@ func (s *BlogRespImpl) GetBlog(r *http.Request) (*dto.BlogResponse, error) {
 	return &blogResp, nil
 }
 
-func (s *BlogRespImpl) GetBlogs() (*[]dto.BlogResponse, error) {
+func (s *BlogServiceImpl) GetBlogs() (*[]dto.BlogResponse, error) {
 	results, err := s.blogRepo.GetBlogs()
 	if err != nil {
 		return nil, err

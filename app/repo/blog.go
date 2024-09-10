@@ -10,7 +10,7 @@ import (
 type BlogRepo interface {
 	Create(blogReq *dto.BlogCreateRequest) (lastinsertedID int64, err error)
 	Update(blogReq *dto.BlogUpdateRequest) error
-	Delete(id int) error
+	Delete(blogReq *dto.BlogDeleteRequest) error
 	Getblog(blogReq *dto.BlogRequest) (blogResp *dto.BlogResponse, err error)
 	GetBlogs() (blogResp *[]dto.BlogResponse, err error)
 	TableName() string //function for reuse table
@@ -58,7 +58,7 @@ func (r *BlogRepoImpl) Create(blogReq *dto.BlogCreateRequest) (lastInsertedID in
 
 func (r *BlogRepoImpl) Update(blogReq *dto.BlogUpdateRequest) (err error) {
 	query := `UPDATE` + r.TableName() +
-		`SET title=$1,content=$2,updated_at=$3,updated_at=$3,updated_by=$4
+		`SET title=$1,content=$2,updated_at=$3,updated_by=$4
 		WHERE id=$5
 		AND status
 		IN(1,2)
@@ -80,12 +80,12 @@ func (r *BlogRepoImpl) Update(blogReq *dto.BlogUpdateRequest) (err error) {
 
 }
 
-func (r *BlogRepoImpl) Delete(id int) (err error) {
+func (r *BlogRepoImpl) Delete(blogReq *dto.BlogDeleteRequest) (err error) {
 	query := `UPDATE` + r.TableName() +
 		`SET deleted_by=$1,deleted_at=$2,status=$3
 	WHERE id=$4`
-	var blog Blog
-	_, err = r.db.Exec(query, blog.DeletedBy, time.Now().UTC(), 3, id)
+	// var blog Blog
+	_, err = r.db.Exec(query, blogReq.DeletedBy, time.Now().UTC(), 3, blogReq.ID)
 	if err != nil {
 		return fmt.Errorf("delete query execution failed due to: %w", err)
 	}
@@ -93,16 +93,16 @@ func (r *BlogRepoImpl) Delete(id int) (err error) {
 }
 
 func (r *BlogRepoImpl) Getblog(blogReq *dto.BlogRequest) (blogResp *dto.BlogResponse, err error) {
-	query := `SELECT id,title,content,author_id,created_at,updated_at FROM` + r.TableName() + `WHERE id=$1 AND status=2`
+	query := `SELECT id,title,content,author_id,created_at,updated_at,updated_by,status FROM` + r.TableName() + `WHERE id=$1`
 	blogResp = &dto.BlogResponse{}
-	if err := r.db.QueryRow(query, blogResp.ID).Scan(&blogResp.ID, &blogResp.Title, &blogResp.Content, &blogResp.AuthorID, &blogResp.CreatedAt, &blogResp.UpdatedAt); err != nil {
+	if err := r.db.QueryRow(query, blogReq.ID).Scan(&blogResp.ID, &blogResp.Title, &blogResp.Content, &blogResp.AuthorID, &blogResp.CreatedAt, &blogResp.UpdatedAt, &blogResp.UpdatedBy, &blogResp.Status); err != nil {
 		return nil, fmt.Errorf("query execution failed due to : %w", err)
 	}
 	return blogResp, nil
 }
 
 func (r *BlogRepoImpl) GetBlogs() (blogResp *[]dto.BlogResponse, err error) {
-	query := `SELECT id,title,content,author_id,created_at,updated_at
+	query := `SELECT id,title,content,author_id,created_at,updated_at,updated_by
 						FROM` + r.TableName() + `` //blogs
 
 	rows, err := r.db.Query(query)
@@ -113,7 +113,7 @@ func (r *BlogRepoImpl) GetBlogs() (blogResp *[]dto.BlogResponse, err error) {
 	var collection []dto.BlogResponse
 	for rows.Next() {
 		var blog dto.BlogResponse
-		if err := rows.Scan(&blog.ID, &blog.Title, &blog.Content, &blog.AuthorID, &blog.AuthorID, &blog.CreatedAt, &blog.UpdatedAt); err != nil {
+		if err := rows.Scan(&blog.ID, &blog.Title, &blog.Content, &blog.AuthorID, &blog.CreatedAt, &blog.UpdatedAt, &blog.UpdatedBy); err != nil {
 			return nil, fmt.Errorf("row scan failed due to : %w", err)
 		}
 		collection = append(collection, blog)

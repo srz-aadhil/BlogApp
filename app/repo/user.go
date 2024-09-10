@@ -97,7 +97,7 @@ func (r *UserRepoImpl) Delete(id int) (err error) {
 	return nil
 }
 func (r *UserRepoImpl) GetAll() (userResp *[]dto.UserResponse, err error) {
-	query := `SELECT id,username,password,created_at,updated_at
+	query := `SELECT id,username,password,salt,created_at,updated_at
 			  FROM` + r.TableName() + `WHERE is_deleted=false`
 
 	rows, err := r.db.Query(query)
@@ -109,7 +109,7 @@ func (r *UserRepoImpl) GetAll() (userResp *[]dto.UserResponse, err error) {
 
 	for rows.Next() {
 		var user dto.UserResponse
-		if err := rows.Scan(&user.ID, &user.UserName, &user.Password, &user.CreatedAt, &user.UpdatedAt); err != nil {
+		if err := rows.Scan(&user.ID, &user.UserName, &user.Password, &user.Salt, &user.CreatedAt, &user.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("row scan failed due to : %w", err)
 		}
 		userCollection = append(userCollection, user)

@@ -68,6 +68,10 @@ func (s *AuthorServiceImpl) GetAuthors() (*[]dto.AuthorResponse, error) {
 		authorResp.Name = val.Name
 		authorResp.CreatedAt = val.CreatedAt
 		authorResp.CreatedBy = val.CreatedBy
+		authorResp.UpdatedAt = val.UpdatedAt
+		authorResp.UpdatedBy = val.UpdatedBy
+		authorResp.DeletedAt = val.DeletedAt
+		authorResp.DeletedBy = val.DeletedBy
 
 		authorslist = append(authorslist, authorResp)
 	}

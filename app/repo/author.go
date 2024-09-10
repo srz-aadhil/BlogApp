@@ -44,11 +44,11 @@ func (r *AuthorRepoImpl) TableName() string {
 
 func (r *AuthorRepoImpl) Create(authorReq *dto.AuthorCreateRequest) (lastInsertedID int64, err error) {
 
-	query := `INSERT INTO` + r.TableName() + `(name)
+	query := `INSERT INTO` + r.TableName() + `(name,created_by)
 						VALUES ($1,$2)
 						RETURNING id`
 
-	if err := r.db.QueryRow(query, author.Name).Scan(&lastInsertedID); err != nil {
+	if err := r.db.QueryRow(query, authorReq.Name, authorReq.CreatedBy).Scan(&lastInsertedID); err != nil {
 		return 0, fmt.Errorf("couldn't get last inserted id due to: %w", err)
 	}
 	return lastInsertedID, nil
@@ -59,7 +59,7 @@ func (r *AuthorRepoImpl) Update(updateReq *dto.AuthorUpdateRequest) (err error) 
 		`SET name= $1,updated_at=$2,updated_by=$3
 				WHERE id=$4`
 
-	result, err := r.db.Exec(query, author.Name, time.Now().UTC(), author.UpdatedBy, author.ID)
+	result, err := r.db.Exec(query, updateReq.Name, time.Now().UTC(), updateReq.UpdatedBy, updateReq.ID)
 	if err != nil {
 		return fmt.Errorf("update query failed due to : %w", err)
 	}
@@ -68,38 +68,38 @@ func (r *AuthorRepoImpl) Update(updateReq *dto.AuthorUpdateRequest) (err error) 
 		return fmt.Errorf("no affected rows due to : %w", err)
 	}
 	if isAffected == 0 {
-		return fmt.Errorf("no user with ID : %d ", author.ID)
+		return fmt.Errorf("no user with ID : %d ", updateReq.ID)
 	}
 	return nil
 }
 
 func (r *AuthorRepoImpl) Delete(id int) (err error) {
 	query := `UPDATE` + r.TableName() +
-		`SET deleted_at=$1,deleted_by=$2
-		      WHERE id=$3`
+		`SET deleted_at=$1
+		      WHERE id=$2`
 
-	_, err = r.db.Exec(query, time.Now().UTC(), author.DeletedBy, id)
+	_, err = r.db.Exec(query, time.Now().UTC(), id)
 	if err != nil {
 		return fmt.Errorf("update query failed due to : %w", err)
 	}
 	return nil
 }
 
-var author Author
+// var author Author
 
 func (r *AuthorRepoImpl) GetOne(id int) (authorResp *dto.AuthorResponse, err error) {
-	query := `SELECT id,name,created_at,updated_at,created_by
+	query := `SELECT id,name,created_at,updated_at,updated_by,created_by
 			  FROM` + r.TableName() +
 		`WHERE id=$1`
-
-	if err := r.db.QueryRow(query, id).Scan(&author.ID, &author.Name, &author.CreatedAt, &author.UpdatedAt, &author.CreatedBy); err != nil {
+	var author dto.AuthorResponse
+	if err := r.db.QueryRow(query, id).Scan(&author.ID, &author.Name, &author.CreatedAt, &author.UpdatedAt, &author.UpdatedBy, &author.CreatedBy); err != nil {
 		return nil, fmt.Errorf("query failed due to : %w", err)
 	}
-	return authorResp, nil
+	return &author, nil
 }
 
 func (r *AuthorRepoImpl) GetAll() (authorResp *[]dto.AuthorResponse, err error) {
-	query := `SELECT id,name,created_at,updated_at
+	query := `SELECT id,name,created_at,updated_at,created_by,deleted_at
 	         FROM ` + r.TableName() + ``
 
 	rows, err := r.db.Query(query)
@@ -111,7 +111,7 @@ func (r *AuthorRepoImpl) GetAll() (authorResp *[]dto.AuthorResponse, err error) 
 	var authorsCollection []dto.AuthorResponse
 	for rows.Next() {
 		authors := dto.AuthorResponse{}
-		if err := rows.Scan(&authors.ID, &authors.Name, &authors.CreatedAt, &authors.UpdatedAt); err != nil {
+		if err := rows.Scan(&authors.ID, &authors.Name, &authors.CreatedAt, &authors.UpdatedAt, &authors.CreatedBy, &authors.DeletedAt); err != nil {
 			return nil, fmt.Errorf("row scan failed due to : %w", err)
 		}
 		authorsCollection = append(authorsCollection, authors)

@@ -12,3 +12,4 @@ func StartServer(port string, h http.Handler) {
 	fmt.Printf("Server connected with port no %s", port)
 	http.ListenAndServe(port, h)
 }
+

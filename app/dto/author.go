@@ -48,6 +48,7 @@ type AuthorCreateRequest struct {
 }
 
 func (a *AuthorCreateRequest) Parse(r *http.Request) error {
+	
 	if err := json.NewDecoder(r.Body).Decode(a); err != nil {
 		return err
 	}
