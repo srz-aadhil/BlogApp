@@ -3,7 +3,7 @@ package controller
 import (
 	"blog/app/service"
 	"blog/pkg/api"
-	"log"
+	"blog/pkg/e"
 	"net/http"
 )
 
@@ -28,8 +28,8 @@ func NewUserController(userService service.UserService) UserController {
 func (c *UserControllerImpl) CreateUser(w http.ResponseWriter, r *http.Request) {
 	userID, err := c.userService.CreateUser(r)
 	if err != nil {
-		log.Fatal("User creation failed due to : ", err)
-		api.Fail(w, http.StatusInternalServerError, "Failed", err.Error())
+		httpErr := e.NewAPIError(err, "can't create the user")
+		api.Fail(w, httpErr.StatusCode, httpErr.Code, httpErr.Message, err.Error())
 		return
 	}
 
@@ -38,8 +38,8 @@ func (c *UserControllerImpl) CreateUser(w http.ResponseWriter, r *http.Request) 
 
 func (c *UserControllerImpl) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	if err := c.userService.UpdateUser(r); err != nil {
-		log.Fatal("User updation failed due to : ", err)
-		api.Fail(w, http.StatusInternalServerError, "Failed", err.Error())
+		httpErr := e.NewAPIError(err, "can't update the user")
+		api.Fail(w, httpErr.StatusCode, httpErr.Code, httpErr.Message, err.Error())
 		return
 	}
 
@@ -49,8 +49,8 @@ func (c *UserControllerImpl) UpdateUser(w http.ResponseWriter, r *http.Request) 
 func (c *UserControllerImpl) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	allUsers, err := c.userService.GetAllUsers()
 	if err != nil {
-		log.Fatal("Fetching all users failed due to :", err)
-		api.Fail(w, http.StatusInternalServerError, "Failed", err.Error())
+		httpErr := e.NewAPIError(err, "can't get all users")
+		api.Fail(w, httpErr.StatusCode, httpErr.Code, httpErr.Message, err.Error())
 		return
 	}
 
@@ -61,8 +61,8 @@ func (c *UserControllerImpl) GetAllUsers(w http.ResponseWriter, r *http.Request)
 func (c *UserControllerImpl) GetUser(w http.ResponseWriter, r *http.Request) {
 	user, err := c.userService.GetUser(r)
 	if err != nil {
-		log.Fatal("Fetching single user failed due to :", err)
-		api.Fail(w, http.StatusInternalServerError, "Failed", err.Error())
+		httpErr := e.NewAPIError(err, "can't get a single author")
+		api.Fail(w, httpErr.StatusCode, httpErr.Code, httpErr.Message, err.Error())
 		return
 	}
 
@@ -71,8 +71,8 @@ func (c *UserControllerImpl) GetUser(w http.ResponseWriter, r *http.Request) {
 
 func (c *UserControllerImpl) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	if err := c.userService.DeleteUser(r); err != nil {
-		log.Fatal("User deletion failed due to :", err)
-		api.Fail(w, http.StatusInternalServerError, "Failed", err.Error())
+		httpErr := e.NewAPIError(err, "can't delete the user")
+		api.Fail(w, httpErr.StatusCode, httpErr.Code, httpErr.Message, err.Error())
 		return
 	}
 

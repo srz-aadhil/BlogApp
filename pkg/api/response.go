@@ -31,7 +31,7 @@ func (e *ResponseError) Error() string {
 }
 
 // Fail sends an unsuccessful JSON with the standard failure format
-func Fail(w http.ResponseWriter, errCode int, msg string, details ...string) {
+func Fail(w http.ResponseWriter, status, errCode int, msg string, details ...string) {
 	r := &Response{
 		Status: StatusFail,
 		Error: &ResponseError{

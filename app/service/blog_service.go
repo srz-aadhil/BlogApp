@@ -3,6 +3,7 @@ package service
 import (
 	"blog/app/dto"
 	"blog/app/repo"
+	"blog/pkg/e"
 	"net/http"
 )
 
@@ -29,16 +30,16 @@ func NewBlogService(blogRepo repo.BlogRepo) BlogService {
 func (s *BlogServiceImpl) CreateBlog(r *http.Request) (int64, error) {
 	body := &dto.BlogCreateRequest{}
 	if err := body.Parse(r); err != nil {
-		return 0, err
+		return 0, e.NewError(e.ErrDecodeRequestBody, "blog create parse error", err)
 	}
 
 	if err := body.Validate(); err != nil {
-		return 0, err
+		return 0, e.NewError(e.ErrValidateRequest, "blog create validation error", err)
 	}
 
 	blogID, err := s.blogRepo.Create(body)
 	if err != nil {
-		return 0, err
+		return 0, e.NewError(e.ErrInvalidRequest, "blog creation error", err)
 	}
 	return blogID, nil
 
@@ -47,15 +48,15 @@ func (s *BlogServiceImpl) CreateBlog(r *http.Request) (int64, error) {
 func (s *BlogServiceImpl) UpdateBlog(r *http.Request) error {
 	body := &dto.BlogUpdateRequest{}
 	if err := body.Parse(r); err != nil {
-		return err
+		return e.NewError(e.ErrDecodeRequestBody, "blog update request decode error", err)
 	}
 
 	if err := body.Validate(); err != nil {
-		return err
+		return e.NewError(e.ErrValidateRequest, "blog update validation failed", err)
 	}
 
 	if err := s.blogRepo.Update(body); err != nil {
-		return err
+		return e.NewError(e.ErrInternalServer, "blog updation error", err)
 	}
 	return nil
 }
@@ -63,15 +64,15 @@ func (s *BlogServiceImpl) UpdateBlog(r *http.Request) error {
 func (s *BlogServiceImpl) DeleteBlog(r *http.Request) error {
 	req := &dto.BlogDeleteRequest{}
 	if err := req.Parse(r); err != nil {
-		return err
+		return e.NewError(e.ErrInvalidRequest, "blog delete parse error", err)
 	}
 
 	if err := req.Validate(); err != nil {
-		return err
+		return e.NewError(e.ErrInvalidRequest, "blog deletion validate error", err)
 	}
 
 	if err := s.blogRepo.Delete(req); err != nil {
-		return err
+		return e.NewError(e.ErrResourceNotFound, "blog not found with id", err)
 	}
 	return nil
 }
@@ -79,16 +80,16 @@ func (s *BlogServiceImpl) DeleteBlog(r *http.Request) error {
 func (s *BlogServiceImpl) GetBlog(r *http.Request) (*dto.BlogResponse, error) {
 	body := &dto.BlogRequest{}
 	if err := body.Parse(r); err != nil {
-		return nil, err
+		return nil, e.NewError(e.ErrInvalidRequest, "blog request parse error", err)
 	}
 
 	if err := body.Validate(); err != nil {
-		return nil, err
+		return nil, e.NewError(e.ErrValidateRequest, "blog request validation failed", err)
 	}
 
 	blog, err := s.blogRepo.Getblog(body)
 	if err != nil {
-		return nil, err
+		return nil, e.NewError(e.ErrResourceNotFound, "not found blog with id", err)
 	}
 
 	var blogResp dto.BlogResponse
@@ -111,7 +112,7 @@ func (s *BlogServiceImpl) GetBlog(r *http.Request) (*dto.BlogResponse, error) {
 func (s *BlogServiceImpl) GetBlogs() (*[]dto.BlogResponse, error) {
 	results, err := s.blogRepo.GetBlogs()
 	if err != nil {
-		return nil, err
+		return nil, e.NewError(e.ErrInternalServer, "All blogs request error", err)
 	}
 
 	var blogList []dto.BlogResponse

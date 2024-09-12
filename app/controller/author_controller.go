@@ -3,7 +3,7 @@ package controller
 import (
 	"blog/app/service"
 	"blog/pkg/api"
-	"log"
+	"blog/pkg/e"
 	"net/http"
 )
 
@@ -28,8 +28,8 @@ func NewAuthorController(authorService service.AuthorService) AuthorController {
 func (c *AuthorControllerImpl) GetaAllAuthors(w http.ResponseWriter, r *http.Request) {
 	allAuthors, err := c.authorService.GetAuthors()
 	if err != nil {
-		log.Printf("can't get authors due to : %s", err)
-		api.Fail(w, http.StatusInternalServerError, "Failed", err.Error())
+		httpErr := e.NewAPIError(err, "can't get all authors")
+		api.Fail(w, httpErr.StatusCode, httpErr.Code, httpErr.Message, err.Error())
 		return
 	}
 
@@ -39,8 +39,8 @@ func (c *AuthorControllerImpl) GetaAllAuthors(w http.ResponseWriter, r *http.Req
 func (c *AuthorControllerImpl) GetOneAuthor(w http.ResponseWriter, r *http.Request) {
 	authorResponse, err := c.authorService.GetAuthor(r)
 	if err != nil {
-		log.Printf("can't get author due to: %s", err)
-		api.Fail(w, http.StatusBadRequest, "failed", err.Error())
+		httpErr := e.NewAPIError(err, "can't get single author")
+		api.Fail(w, httpErr.StatusCode, httpErr.Code, httpErr.Message, err.Error())
 		return
 	}
 
@@ -51,8 +51,8 @@ func (c *AuthorControllerImpl) GetOneAuthor(w http.ResponseWriter, r *http.Reque
 func (c *AuthorControllerImpl) CreateAuthor(w http.ResponseWriter, r *http.Request) {
 	authorID, err := c.authorService.CreateAuthor(r)
 	if err != nil {
-		log.Printf("author creation failed due to %v", err)
-		api.Fail(w, http.StatusInternalServerError, "Failed", err.Error())
+		httpErr := e.NewAPIError(err, "can't create author")
+		api.Fail(w, httpErr.StatusCode, httpErr.Code, httpErr.Message, err.Error())
 		return
 	}
 
@@ -61,8 +61,8 @@ func (c *AuthorControllerImpl) CreateAuthor(w http.ResponseWriter, r *http.Reque
 
 func (c *AuthorControllerImpl) UpdateAuthor(w http.ResponseWriter, r *http.Request) {
 	if err := c.authorService.UpdateAuthor(r); err != nil {
-		log.Printf("author updation failed due to %v", err)
-		api.Fail(w, http.StatusInternalServerError, "failed", err.Error())
+		httpErr := e.NewAPIError(err, "can't update author")
+		api.Fail(w, httpErr.StatusCode, httpErr.Code, httpErr.Message, err.Error())
 		return
 	}
 	api.Success(w, http.StatusOK, "Author Updation Success")
@@ -70,8 +70,8 @@ func (c *AuthorControllerImpl) UpdateAuthor(w http.ResponseWriter, r *http.Reque
 
 func (c *AuthorControllerImpl) DeleteAuthor(w http.ResponseWriter, r *http.Request) {
 	if err := c.authorService.DeleteAuthor(r); err != nil {
-		log.Printf("author deletion failed due to %v", err)
-		api.Fail(w, http.StatusInternalServerError, "Failed", err.Error())
+		httpErr := e.NewAPIError(err, "can't delete author")
+		api.Fail(w, httpErr.StatusCode, httpErr.Code, httpErr.Message, err.Error())
 		return
 	}
 	api.Success(w, http.StatusOK, "Author deletion successfull")
