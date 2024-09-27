@@ -48,7 +48,7 @@ func Fail(w http.ResponseWriter, status, errCode int, msg string, details ...str
 	}
 
 	w.Header().Set("Content-type", "application/json")
-	w.WriteHeader(errCode)
+	w.WriteHeader(status)
 	w.Write(j)
 
 }
