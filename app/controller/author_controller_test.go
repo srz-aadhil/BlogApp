@@ -272,3 +272,55 @@ func TestDeleteAuthor(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateAuthor(t *testing.T) {
+	authorMock := new(mocks.AuthorService)
+	conn := NewAuthorController(authorMock)
+	tests := []struct {
+		name         string
+		status       int
+		authorCreate *dto.AuthorCreateRequest
+		want         string //dto.AuthorResponse
+		authorID     int64
+		err          error
+		wantErr      bool
+	}{
+		{
+			//Success case
+			name:   "testing case1",
+			status: 200,
+			authorCreate: &dto.AuthorCreateRequest{
+				Name:      "author1",
+				CreatedBy: 4,
+			},
+			authorID: 3,
+			want:     `{"status":"ok","result":3}`,
+			err:      nil,
+			wantErr:  false,
+		},
+		{
+			//Error case
+			name:   "testing case2",
+			status: 500,
+			err: &e.WrapError{
+				ErrorCode: 500,
+				Msg:       "Internal Server Error",
+				RootCause: errors.New("database error"),
+			},
+			want:    `{"status":"not ok","error":{"code":500,"message":"can't create author","details":["database error"]}}`,
+			wantErr: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := httptest.NewRequest("POST", "/create", nil)
+			res := httptest.NewRecorder()
+			authorMock.On("CreateAuthor", req).Once().Return(test.authorID, test.err)
+			conn.CreateAuthor(res, req)
+
+			assert.Equal(t, test.status, res.Code)
+			assert.Equal(t, test.want, res.Body.String())
+		})
+	}
+}
