@@ -10,11 +10,11 @@ import (
 )
 
 type BlogResponse struct {
-	ID       int
-	Title    string
-	Content  string
-	AuthorID int
-	Status   int
+	ID       int    `json:"id"`
+	Title    string `json:"title"`
+	Content  string `json:"content"`
+	AuthorID int    `json:"authorid"`
+	Status   int    `json:"status"`
 	CreatedUpdatedResponse
 	DeleteResponse
 }

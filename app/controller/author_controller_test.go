@@ -122,6 +122,7 @@ func TestGetAllAuthors(t *testing.T) {
 		},
 
 		{
+			//error case
 			name:   "error case",
 			status: 500,
 			author: nil,
@@ -151,35 +152,24 @@ func TestGetAllAuthors(t *testing.T) {
 }
 
 func TestUpdateAuthor(t *testing.T) {
-	createdAt := time.Date(2024, time.July, 15, 0, 0, 0, 0, time.UTC)
-	updatedAt := time.Date(2024, time.July, 15, 0, 0, 0, 0, time.UTC)
-	updatedBy := 2
 	authorMock := new(mocks.AuthorService)
 	conn := NewAuthorController(authorMock)
 	tests := []struct {
-		name    string
-		status  int
-		author  *dto.AuthorResponse
-		want    string //dto.AuthoResponse
-		error   error
-		wantErr bool
+		name         string
+		status       int
+		authorUpdate *dto.AuthorUpdateRequest
+		want         string //dto.AuthoResponse
+		error        error
+		wantErr      bool
 	}{
 		//Success case
 		{
 			name:   "success case",
 			status: 200,
-			author: &dto.AuthorResponse{
-				ID:   3,
-				Name: "updated author",
-				CreatedUpdatedResponse: dto.CreatedUpdatedResponse{
-					CreatedAt: createdAt,
-					UpdatedBy: &updatedBy,
-					UpdatedAt: &updatedAt,
-				},
-				DeleteResponse: dto.DeleteResponse{
-					DeletedBy: nil,
-					DeletedAt: nil,
-				},
+			authorUpdate: &dto.AuthorUpdateRequest{
+				ID:        3,
+				Name:      "updating case",
+				UpdatedBy: 2,
 			},
 			want:    `{"status":"ok","result":"Author Updation Success"}`,
 			wantErr: false,
@@ -212,45 +202,29 @@ func TestUpdateAuthor(t *testing.T) {
 }
 
 func TestDeleteAuthor(t *testing.T) {
-	createdAt := time.Date(2024, time.July, 16, 0, 0, 0, 0, time.UTC)
-	updatedAt := time.Date(2024, time.July, 16, 0, 0, 0, 0, time.UTC)
-	deletedAt := time.Date(2024, time.July, 17, 0, 0, 0, 0, time.UTC)
-	deletedBy := 3
 	authorMock := new(mocks.AuthorService)
 	conn := NewAuthorController(authorMock)
 	tests := []struct {
 		name    string
 		status  int
-		author  *dto.AuthorResponse
 		want    string //dto.AuthorReaponse
-		error   error
+		err     error
 		wantErr bool
 	}{
 		{
 			//Success case
-			name:   "success case",
-			status: 200,
-			author: &dto.AuthorResponse{
-				ID:   4,
-				Name: "testing case1",
-				CreatedUpdatedResponse: dto.CreatedUpdatedResponse{
-					CreatedAt: createdAt,
-					UpdatedAt: &updatedAt,
-				},
-				DeleteResponse: dto.DeleteResponse{
-					DeletedBy: &deletedBy,
-					DeletedAt: &deletedAt,
-				},
-			},
+			name:    "success case",
+			status:  200,
 			want:    `{"status":"ok","result":"Author deletion successfull"}`,
+			err:     nil,
 			wantErr: false,
 		},
 
 		{
 			//error case
-			name:   "testing case 2",
+			name:   "error case",
 			status: 500,
-			error: &e.WrapError{
+			err: &e.WrapError{
 				ErrorCode: 500,
 				Msg:       "Internal Server Error",
 				RootCause: errors.New("database error"),
@@ -264,7 +238,7 @@ func TestDeleteAuthor(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			req := httptest.NewRequest("DELETE", "/4", nil)
 			res := httptest.NewRecorder()
-			authorMock.On("DeleteAuthor", req).Once().Return(test.error)
+			authorMock.On("DeleteAuthor", req).Once().Return(test.err)
 			conn.DeleteAuthor(res, req)
 
 			assert.Equal(t, test.status, res.Code)
@@ -299,8 +273,8 @@ func TestCreateAuthor(t *testing.T) {
 			wantErr:  false,
 		},
 		{
-			//Error case
-			name:   "testing case2",
+			//error case
+			name:   "error case",
 			status: 500,
 			err: &e.WrapError{
 				ErrorCode: 500,
