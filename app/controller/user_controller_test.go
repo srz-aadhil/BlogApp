@@ -209,3 +209,100 @@ func TestGetAllUsers(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateUsers(t *testing.T) {
+	userMock := new(mocks.UserService)
+	conn := NewUserController(userMock)
+	tests := []struct {
+		name    string
+		status  int
+		user    *dto.UserUpdateRequest
+		want    string
+		err     error
+		wantErr bool
+	}{
+		{
+			//success case
+			name:   "success case",
+			status: 200,
+			user: &dto.UserUpdateRequest{
+				ID:       2,
+				UserName: "manu",
+				Password: "1234",
+			},
+			want:    `{"status":"ok","result":"User updation successfull"}`,
+			err:     nil,
+			wantErr: false,
+		},
+		{
+			//error case
+			name:   "error case",
+			status: 500,
+			err: &e.WrapError{
+				ErrorCode: 500,
+				Msg:       "Internal Server Error",
+				RootCause: errors.New("database error"),
+			},
+			want:    `{"status":"not ok","error":{"code":500,"message":"can't update the user","details":["database error"]}}`,
+			wantErr: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := httptest.NewRequest("PUT", "/2", nil)
+			res := httptest.NewRecorder()
+			userMock.On("UpdateUser", req).Once().Return(test.err)
+			conn.UpdateUser(res, req)
+
+			assert.Equal(t, test.status, res.Code)
+			assert.Equal(t, test.want, res.Body.String())
+		})
+	}
+}
+
+func TestDeleteUser(t *testing.T) {
+	userMock := new(mocks.UserService)
+	conn := NewUserController(userMock)
+	tests := []struct {
+		name    string
+		status  int
+		want    string
+		userID  int64
+		err     error
+		wantErr bool
+	}{
+		{
+			name:    "success case",
+			status:  200,
+			userID:  2,
+			want:    `{"status":"ok","result":"User deletion successfully completed"}`,
+			err:     nil,
+			wantErr: false,
+		},
+		{
+			//error case
+			name:   "error case",
+			status: 500,
+			err: &e.WrapError{
+				ErrorCode: 500,
+				Msg:       "Internal Server Error",
+				RootCause: errors.New("database error"),
+			},
+			want:    `{"status":"not ok","error":{"code":500,"message":"can't delete the user","details":["database error"]}}`,
+			wantErr: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := httptest.NewRequest("DELETE", "/2", nil)
+			res := httptest.NewRecorder()
+			userMock.On("DeleteUser", req).Once().Return(test.err)
+			conn.DeleteUser(res, req)
+
+			assert.Equal(t, test.status, res.Code)
+			assert.Equal(t, test.want, res.Body.String())
+		})
+	}
+}
