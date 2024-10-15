@@ -61,7 +61,7 @@ func (c *UserControllerImpl) GetAllUsers(w http.ResponseWriter, r *http.Request)
 func (c *UserControllerImpl) GetUser(w http.ResponseWriter, r *http.Request) {
 	user, err := c.userService.GetUser(r)
 	if err != nil {
-		httpErr := e.NewAPIError(err, "can't get a single author")
+		httpErr := e.NewAPIError(err, "can't get a single user")
 		api.Fail(w, httpErr.StatusCode, httpErr.Code, httpErr.Message, err.Error())
 		return
 	}
